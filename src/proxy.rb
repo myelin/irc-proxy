@@ -34,6 +34,8 @@ class App
 
   def read_config
     @conf = YAML.load(IO.read("config.yml"))
+    @buffer_path = @conf['global']['buffers']
+    Dir.mkdir(@buffer_path) unless File.exist?(@buffer_path)
   end
 
   def start_server_connections
@@ -58,7 +60,10 @@ class App
     if c
       c.handle_chanmsg(server, chan, from, msg)
     else
-      puts "TODO: buffer message on channel #{chan}"
+      puts "buffering message on server #{server.host} channel #{chan}"
+      File.open("#{@buffer_path}/#{server.host}.buffer", "a") do |f|
+        f.write "SERVER #{server.host} CHANNEL #{chan} MSG #{msg}\n"
+      end
     end
   end
 

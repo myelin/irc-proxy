@@ -8,7 +8,8 @@ class ServerConnection < AsyncSocket
     @host = host
     @port = conf['port']
     @ssl = conf['ssl']
-    @desired_nick = conf['nick']
+    @online_nick = conf['nick']
+    @away_nick = conf['awaynick'] || @online_nick
     @user = conf['user']
     @name = conf['name']
     @channels_to_join = conf['channels']
@@ -23,8 +24,12 @@ class ServerConnection < AsyncSocket
     end
   end
 
+  def desired_nick
+    @online_nick
+  end
+
   def run
-    puts "Server thread for #{@desired_nick}@#{@host}:#{@port} starting"
+    puts "Server thread for #{desired_nick}@#{@host}:#{@port} starting"
 
     while true
       if @state == :offline
@@ -35,9 +40,9 @@ class ServerConnection < AsyncSocket
       poll_socket
     end
 
-    puts "Server thread for #{@desired_nick}@#{@host}:#{@port} shut down"
+    puts "Server thread for #{desired_nick}@#{@host}:#{@port} shut down"
   rescue Exception => e
-    puts "Exception killed server thread for #{@desired_nick}@#{@host}:#{@port}: #{e}"
+    puts "Exception killed server thread for #{desired_nick}@#{@host}:#{@port}: #{e}"
     puts e.backtrace.join("\n")
   end
 
@@ -58,7 +63,7 @@ class ServerConnection < AsyncSocket
   def handle_connect
     puts "connected to server #{@host}!"
     @state = :logging_in
-    write "NICK #{@desired_nick}"
+    write "NICK #{desired_nick}"
     write "USER #{@user} #{@hostname} #{@host} :#{@name}"
   end
 
@@ -83,7 +88,7 @@ class ServerConnection < AsyncSocket
       when "433"
         #[":servername", "433", "*", "myelin", "Nickname is already in use."]
         @nick_serial += 1
-        write "NICK #{@desired_nick}#{@nick_serial}"
+        write "NICK #{desired_nick}#{@nick_serial}"
       when "MODE"
         if args[0] == ":#{@nick}"
           puts "mode message; i'm connected!"

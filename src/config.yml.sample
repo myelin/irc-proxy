@@ -1,4 +1,6 @@
 # copy this to config.yml and customize to fit your needs
+global:
+ buffers: ./buffers
 users:
  yourlogin:
   passwd: insert password here
@@ -7,6 +9,7 @@ servers:
   port: 6667
   ssl: false
   nick: yournick
+  awaynick: yournick_away
   user: me
   name: Your Name Here
   channels:
