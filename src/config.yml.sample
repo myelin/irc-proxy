@@ -1,0 +1,13 @@
+# copy this to config.yml and customize to fit your needs
+users:
+ yourlogin:
+  passwd: insert password here
+servers:
+ some.irc.server:
+  port: 6667
+  ssl: false
+  nick: yournick
+  user: me
+  name: Your Name Here
+  channels:
+   - "#channelname"
