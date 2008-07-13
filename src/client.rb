@@ -45,6 +45,10 @@ class ClientConnection < AsyncSocket
     elsif m = /^JOIN (#[a-z0-9]+)$/.match(line)
       chan = m.captures[0]
       puts "join channel #{chan}"
+      umsg ["JOIN", chan] # tell the user they're joined
+      msg "332", [chan, "channel title"]
+      msg "353", ["=", chan, "userone usertwo userthree"]
+      msg "366", [chan, "End of /NAMES list"]
     elsif line == 'AWAY'
       @away = true
     else
@@ -59,7 +63,7 @@ class ClientConnection < AsyncSocket
     msg "003", ["This server was created #{@timestamp.to_s}"]
     msg "004", [@hostname, "0.01", "iowghraAsORTVSxNCWqBzvdHtGp", "lvhopsmntikrRcaqOALQbSeIKVfMCuzNTGj"]
     
-    # copied from irc.iopen.net
+    # copied from an Unreal server
     msg "005", ["NAMESX", "SAFELIST", "HCN", "MAXCHANNELS=10", "CHANLIMIT=#:10", "MAXLIST=b:60,e:60,I:60", "NICKLEN=30", "CHANNELLEN=32", "TOPICLEN=307", "KICKLEN=307", "AWAYLEN=307", "MAXTARGETS=20", "WALLCHOPS", "are supported by this server"]
     msg "251", ["There are 7 users and 8 invisible on 2 servers"]
     msg "252", ["8", "operator(s) online"]
@@ -75,6 +79,10 @@ class ClientConnection < AsyncSocket
 
   def msg(cmd, args)
     msg_from @hostname, cmd, @client_nick, args
+  end
+
+  def umsg(args)
+    raw_msg([":#{@client_nick}!#{@client_login}@your.host"] + args)
   end
 
   def msg_from(from, cmd, to, args)
