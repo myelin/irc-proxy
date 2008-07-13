@@ -4,6 +4,9 @@ require 'yaml'
 require 'socket'
 require 'pp'
 
+require 'rubygems'
+require 'json' # for buffering
+
 require 'async_socket'
 require 'listener'
 require 'server'
@@ -62,7 +65,12 @@ class App
     else
       puts "buffering message on server #{server.host} channel #{chan}"
       File.open("#{@buffer_path}/#{server.host}.buffer", "a") do |f|
-        f.write "SERVER #{server.host} CHANNEL #{chan} MSG #{msg}\n"
+        f.write({
+                  'server' => server.host,
+                  'nick' => from,
+                  'channel' => chan,
+                  'msg' => msg,
+                }.to_json + "\n")
       end
     end
   end
