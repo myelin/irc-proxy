@@ -1,4 +1,6 @@
 class ServerConnection < AsyncSocket
+  attr_reader :host
+
   def initialize(app, conf)
     super()
     @app = app
@@ -9,6 +11,7 @@ class ServerConnection < AsyncSocket
     @desired_nick = conf['nick']
     @user = conf['user']
     @name = conf['name']
+    @channels_to_join = conf['channels']
 
     @state = :offline
   end
@@ -44,6 +47,13 @@ class ServerConnection < AsyncSocket
     connect(@host, @port)
   end
 
+  def join_channels
+    @channels_to_join.each do |chan|
+      puts "joining #{chan}"
+      write "JOIN #{chan}"
+    end
+  end
+
   def handle_connect
     puts "connected to server!"
     @state = :logging_in
@@ -65,13 +75,25 @@ class ServerConnection < AsyncSocket
         @server_name = args[3]
         puts "i am #{@nick} and the server is #{@server_name}"
       when "433"
-        #[":irc.iopen.net", "433", "*", "myelin", "Nickname is already in use."]
+        #[":servername", "433", "*", "myelin", "Nickname is already in use."]
         @nick_serial += 1
         write "NICK #{@desired_nick}#{@nick_serial}"
       when "MODE"
         if args[0] == ":#{@nick}"
-          puts "mode message; i'm connected"
+          puts "mode message; i'm connected!"
           @state = :online
+          join_channels
+        end
+      when "PRIVMSG"
+        #[":nick!user@user.host.com", "PRIVMSG", "#channel", "lol"]
+        from, _, to, msg = args
+        nick, user, host = /^:(.*?)!(.*?)@(.*?)$/.match(from).captures
+        if to == @nick
+          @app.handle_privmsg(self, nick, msg)
+        elsif to[0..0] == '#'
+          @app.handle_chanmsg(self, to, nick, msg)
+        else
+          puts "unknown privmsg! <#{nick}> -> <#{to}>: #{msg}"
         end
       end
     else

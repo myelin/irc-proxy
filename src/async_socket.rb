@@ -14,7 +14,7 @@ class AsyncSocket
   end
 
   def poll_socket
-    puts "select"
+    #puts "select"
     s = IO.select([@sock], # readable
                   (@connected && @wbuffer.empty?) ? [] : [@sock], # writable
                   @connected ? [@sock] : [], # error
@@ -73,12 +73,12 @@ class AsyncSocket
   end
 
   def write(s)
-    puts "buffering: #{s.inspect}"
+    #puts "buffering: #{s.inspect}"
     @wbuffer << s + "\n"
   end
 
   def write_raw(s)
-    puts "buffering: #{s.inspect}"
+    #puts "buffering: #{s.inspect}"
     @wbuffer << s
   end
 

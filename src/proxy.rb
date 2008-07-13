@@ -25,6 +25,15 @@ class App
       ServerConnection.new(self, s).start
     end
   end
+
+  def handle_privmsg(server, from, msg)
+    puts "<#{server.host}> #{from}: #{msg}"
+  end
+
+  def handle_chanmsg(server, chan, from, msg)
+    puts "<#{server.host}> #{chan}/#{from}: #{msg}"
+  end
+    
 end
 
 App.new.main
