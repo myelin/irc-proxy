@@ -1,6 +1,6 @@
 require 'socket'
 
-class Client
+class ClientConnection
   def initialize(sock)
     @hostname = Socket::gethostname
 
@@ -11,6 +11,9 @@ class Client
 
     @client_user = @client_host = @client_login = @client_name = @client_pass = @client_nick = nil
     @registered = false
+
+    @channels = []
+    @away = false
   end
 
   def start
@@ -76,6 +79,11 @@ class Client
     elsif m = /^NICK (.*)$/.match(line)
       @client_nick = m.captures[0]
       try_register
+    elsif m = /^JOIN (#[a-z0-9]+)$/.match(line)
+      chan = m.captures[0]
+      puts "join channel #{chan}"
+    elsif line == 'AWAY'
+      @away = true
     else
       puts "can't parse #{line}"
     end
