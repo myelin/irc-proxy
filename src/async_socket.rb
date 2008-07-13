@@ -5,6 +5,7 @@ class SocketClosed < Exception; end
 
 class AsyncSocket
   def initialize
+    @hostname = Socket::gethostname
     @rbuffer = []
     @wbuffer = []
     @connected = false # we have a valid socket
@@ -15,13 +16,15 @@ class AsyncSocket
   def poll_socket
     puts "select"
     s = IO.select([@sock], # readable
-                  (@connecting || @wbuffer.empty?) ? [] : [@sock], # writable
+                  (@connected && @wbuffer.empty?) ? [] : [@sock], # writable
                   @connected ? [@sock] : [], # error
                   1)
     return if s.nil?
     r, w, e = *s
     raise Exception, "internal error - socket #{@sock} appeared in exception list from IO.select and i don't know what to do!" if e.include? @sock
-    
+
+    #puts "state: #{@connecting} #{r.inspect} #{w.inspect} #{e.inspect}"
+
     # if writable
     if w.include? @sock
       if @connecting
@@ -70,6 +73,12 @@ class AsyncSocket
   end
 
   def write(s)
+    puts "buffering: #{s.inspect}"
+    @wbuffer << s + "\n"
+  end
+
+  def write_raw(s)
+    puts "buffering: #{s.inspect}"
     @wbuffer << s
   end
 

@@ -5,8 +5,6 @@ class ClientConnection < AsyncSocket
     @sock = sock
     @connected = true
 
-    @hostname = Socket::gethostname
-
     @timestamp = Time.now
 
     @client_user = @client_host = @client_login = @client_name = @client_pass = @client_nick = nil
@@ -70,19 +68,19 @@ class ClientConnection < AsyncSocket
     send_numeric "266", ":Current Global Users: 15  Max: 23"
     send_numeric "422", ":MOTD File is missing"
 
-    write ":#{@client_nick} MODE #{@client_nick} :+iwx\n"
+    write ":#{@client_nick} MODE #{@client_nick} :+iwx"
     @registered = true
   end
 
   def send_err(err)
-    write "error: #{err}\n"
+    write "error: #{err}"
   end
 
   def send_numeric(code, txt)
-    write ":#{@hostname} #{code} #{@client_nick} #{txt}\n"
+    write ":#{@hostname} #{code} #{@client_nick} #{txt}"
   end
 
   def send_msg(msg)
-    write ":#{@hostname} #{Time.now.to_i - @timestamp} #{@client_nick} :#{msg}\n"
+    write ":#{@hostname} #{Time.now.to_i - @timestamp} #{@client_nick} :#{msg}"
   end
 end
