@@ -27,6 +27,11 @@ class App
     @clients << c
   end
 
+  def client_disconnected(c)
+    puts "removing client from list"
+    @clients.delete(c)
+  end
+
   def read_config
     @conf = YAML.load(IO.read("config.yml"))
   end
@@ -50,7 +55,11 @@ class App
   def handle_chanmsg(server, chan, from, msg)
     puts "<#{server.host}> #{chan}/#{from}: #{msg}"
     c = find_client_on_channel(chan)
-    c.handle_chanmsg(server, chan, from, msg)
+    if c
+      c.handle_chanmsg(server, chan, from, msg)
+    else
+      puts "TODO: buffer message on channel #{chan}"
+    end
   end
 
   def send_chanmsg(chan, msg)
@@ -66,12 +75,14 @@ class App
     @servers.each do |host, s|
       return s if s.channels.include?(chan)
     end
+    nil
   end
 
   def find_client_on_channel(chan)
     @clients.each do |c|
       return c if c.channels.include?(chan)
     end
+    nil
   end
     
 end

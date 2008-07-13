@@ -29,9 +29,13 @@ class ClientConnection < AsyncSocket
       poll_socket
     end
     puts "Client thread for socket #{@sock} shut down"
+  rescue SocketClosed => e
+    puts "socket closed; killing client"
   rescue Exception => e
     puts "Exception killed client thread for #{@sock}: #{e}"
     puts e.backtrace.join("\n")
+  ensure
+    @app.client_disconnected(self)
   end
 
   def handle_line(line)
