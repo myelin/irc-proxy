@@ -8,6 +8,8 @@ class ServerConnection < AsyncSocket
     @ssl = conf['ssl']
 
     @nick = conf['nick']
+
+    @state = :offline
   end
 
   def start
@@ -19,17 +21,35 @@ class ServerConnection < AsyncSocket
   def run
     puts "Server thread for #{@nick}@#{@host}:#{@port} starting"
 
-    @state = :offline
+    while true
+      case @state
+      when :offline
+        puts "offline, connecting"
+        connect(@host, @port)
+        @state = :connecting
+      when :connecting
+        raise Exception, "should be connecting and not connected in connecting state" if @connected || !@connecting
+      when :logging_in
+        #TODO
+      else
+        raise Exception, "invalid state #{@state}"
+      end
 
-    while false
-      s = IO.select([@sock], @client_wbuffer.empty? ? [] : [@sock], [], 1)
-      next if s.nil?
-      r, w, e = *s
+      poll_socket
     end
 
     puts "Server thread for #{@nick}@#{@host}:#{@port} shut down"
   rescue Exception => e
     puts "Exception killed server thread for #{@nick}@#{@host}:#{@port}: #{e}"
     puts e.backtrace.join("\n")
+  end
+
+  def handle_connect
+    puts "connected to server!"
+    @state = :logging_in
+  end
+
+  def handle_line(line)
+    puts "server said: #{line}"
   end
 end

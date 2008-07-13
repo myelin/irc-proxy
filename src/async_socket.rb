@@ -7,16 +7,28 @@ class AsyncSocket
   def initialize
     @rbuffer = []
     @wbuffer = []
+    @connected = false # we have a valid socket
+    @connecting = false # connect_nonblock() has been called
+    @sock = nil
   end
 
   def poll_socket
     puts "select"
-    s = IO.select([@sock], @wbuffer.empty? ? [] : [@sock], [], 1)
+    s = IO.select([@sock], # readable
+                  (@connecting || @wbuffer.empty?) ? [] : [@sock], # writable
+                  @connected ? [@sock] : [], # error
+                  1)
     return if s.nil?
     r, w, e = *s
+    raise Exception, "internal error - socket #{@sock} appeared in exception list from IO.select and i don't know what to do!" if e.include? @sock
     
     # if writable
     if w.include? @sock
+      if @connecting
+        @connecting = false
+        @connected = true
+        handle_connect
+      end
       until @wbuffer.empty?
         d = @wbuffer.shift
         puts "sending #{d}"
@@ -49,11 +61,29 @@ class AsyncSocket
     end
   end
 
-  def handle_line
+  def handle_line(line)
     raise NotImplementedError, "handle_line is an abstract method"
+  end
+
+  def handle_connect
+    raise NotImplementedError, "handle_connect is an abstract method"
   end
 
   def write(s)
     @wbuffer << s
+  end
+
+  def connect(host, port)
+    @connecting = true
+    @connected = false
+    @sock = Socket.new(Socket::AF_INET, Socket::SOCK_STREAM, 0)
+    begin
+      @sock.connect_nonblock(Socket.sockaddr_in(port, host))
+      @connecting = false # unlikely
+      @connected = true
+    rescue Errno::EINPROGRESS
+      # poll_socket will pick up the connection
+    end
+    handle_connect if @connected
   end
 end

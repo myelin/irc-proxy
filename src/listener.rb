@@ -1,9 +1,7 @@
-require 'socket'
-
-require 'client'
-
 class Listener
-  def initialize
+  def initialize(app)
+    @app = app
+
     @threads = []
     @port = 6667
   end
@@ -14,7 +12,7 @@ class Listener
     while true
       begin
         sock = @serv.accept_nonblock
-        @threads << ClientConnection.new(sock).start
+        @threads << ClientConnection.new(@app, sock).start
       rescue Errno::EAGAIN, Errno::EWOULDBLOCK, Errno::ECONNABORTED, Errno::EPROTO, Errno::EINTR
         IO.select([@serv], [], [], 1)
         retry

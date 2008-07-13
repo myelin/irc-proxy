@@ -1,13 +1,13 @@
-require 'socket'
+class ClientConnection < AsyncSocket
+  def initialize(app, sock)
+    super()
+    @app = app
+    @sock = sock
+    @connected = true
 
-class ClientConnection
-  def initialize(sock)
     @hostname = Socket::gethostname
 
     @timestamp = Time.now
-    @sock = sock
-    @client_rbuffer = []
-    @client_wbuffer = []
 
     @client_user = @client_host = @client_login = @client_name = @client_pass = @client_nick = nil
     @registered = false
@@ -17,55 +17,19 @@ class ClientConnection
   end
 
   def start
-    puts "Starting new client for socket #{@sock}"
     Thread.new do
       run
     end
   end
 
   def run
+    puts "Client thread for socket #{@sock} starting"
     while true
-      puts "select"
-      s = IO.select([@sock], @client_wbuffer.empty? ? [] : [@sock], [], 1)
-      next if s.nil?
-      r, w, e = *s
-
-      # if writable
-      if w.include? @sock
-        until @client_wbuffer.empty?
-          d = @client_wbuffer.shift
-          puts "sending #{d}"
-          written = @sock.write_nonblock(d)
-          if written < d.length
-            # put the rest of the line back into the buffer
-            @client_wbuffer.unshift d[written+1..-1]
-            puts "didn't manage to send it all, putting this back in the send buffer: #{@client_wbuffer[0]}"
-            break
-          end
-        end
-      end
-
-      # if readable
-      if r.include? @sock
-        d = @sock.recv_nonblock(1024)
-        break if d == ''
-        
-        p = d.rindex("\n")
-        if p.nil?
-          @client_rbuffer << d
-        else
-          @client_rbuffer  << d[0..p]
-          lines = (@client_rbuffer * "").split("\n")
-          @client_rbuffer = [d[p+1..-1]]
-          lines.each do |line|
-            handle_line line.chomp
-          end
-        end
-      end
+      poll_socket
     end
-    puts "socket closed - thread done"
+    puts "Client thread for socket #{@sock} shut down"
   rescue Exception => e
-    puts "Exception in thread: #{e}"
+    puts "Exception killed client thread for #{@sock}: #{e}"
     puts e.backtrace.join("\n")
   end
 
@@ -106,24 +70,19 @@ class ClientConnection
     send_numeric "266", ":Current Global Users: 15  Max: 23"
     send_numeric "422", ":MOTD File is missing"
 
-    send_raw ":#{@client_nick} MODE #{@client_nick} :+iwx"
+    write ":#{@client_nick} MODE #{@client_nick} :+iwx\n"
     @registered = true
   end
 
   def send_err(err)
-    send_raw "error: #{err}"
+    write "error: #{err}\n"
   end
 
   def send_numeric(code, txt)
-    send_raw ":#{@hostname} #{code} #{@client_nick} #{txt}"
+    write ":#{@hostname} #{code} #{@client_nick} #{txt}\n"
   end
 
   def send_msg(msg)
-    send_raw ":#{@hostname} #{Time.now.to_i - @timestamp} #{@client_nick} :#{msg}"
-  end
-
-  def send_raw(txt)
-    #puts "buffering #{txt}"
-    @client_wbuffer << txt + "\n"
+    write ":#{@hostname} #{Time.now.to_i - @timestamp} #{@client_nick} :#{msg}\n"
   end
 end
