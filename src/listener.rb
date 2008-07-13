@@ -5,10 +5,12 @@ require 'client'
 class Listener
   def initialize
     @threads = []
+    @port = 6667
   end
 
   def listen_forever
-    @serv = TCPServer.new(6667)
+    puts "Listening on port #{@port} for IRC clients ..."
+    @serv = TCPServer.new(@port)
     while true
       begin
         sock = @serv.accept_nonblock

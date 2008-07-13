@@ -14,7 +14,7 @@ class Client
   def run
     puts "in the thread now"
     while true
-      print "read from socket"
+      puts "read from socket"
       IO.select([@sock])
       d = @sock.recv_nonblock(1024)
       break if d == ''
@@ -31,7 +31,7 @@ class Client
         end
       end
     end
-    puts "socket closed - thread finished"
+    puts "socket closed - thread done"
   end
 
   def handle_line(line)
