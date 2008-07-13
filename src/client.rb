@@ -3,8 +3,9 @@ class ClientConnection < AsyncSocket
     super()
     @app = app
     @sock = sock
-    @connected = true
+    @users = app.conf['users']
 
+    @connected = true
     @timestamp = Time.now
 
     @client_user = @client_host = @client_login = @client_name = @client_pass = @client_nick = nil
@@ -53,23 +54,38 @@ class ClientConnection < AsyncSocket
 
   def try_register
     return unless @client_user && @client_pass && @client_nick
-    send_numeric "001", ":Welcome to the proxy #{@client_nick}!#{@client_user}@#{@client_host}"
-    send_numeric "002", ":Your host is #{@hostname}, running Phil's Ruby IRC proxy"
-    send_numeric "003", ":This server was created #{@timestamp.to_s}"
-    send_numeric "004", ":#{@hostname} 0.01 iowghraAsORTVSxNCWqBzvdHtGp lvhopsmntikrRcaqOALQbSeIKVfMCuzNTGj"
-
+    msg "001", ["Welcome to the proxy #{@client_nick}!#{@client_user}@#{@client_host}"]
+    msg "002", ["Your host is #{@hostname}, running Phil's Ruby IRC proxy"]
+    msg "003", ["This server was created #{@timestamp.to_s}"]
+    msg "004", [@hostname, "0.01", "iowghraAsORTVSxNCWqBzvdHtGp", "lvhopsmntikrRcaqOALQbSeIKVfMCuzNTGj"]
+    
     # copied from irc.iopen.net
-    send_numeric "005", "NAMESX SAFELIST HCN MAXCHANNELS=10 CHANLIMIT=#:10 MAXLIST=b:60,e:60,I:60 NICKLEN=30 CHANNELLEN=32 TOPICLEN=307 KICKLEN=307 AWAYLEN=307 MAXTARGETS=20 WALLCHOPS :are supported by this server"
-    send_numeric "251", ":There are 7 users and 8 invisible on 2 servers"
-    send_numeric "252", "8 :operator(s) online"
-    send_numeric "254", "4 :channels formed"
-    send_numeric "255", ":I have 7 clients and 1 servers"
-    send_numeric "265", ":Current Local Users: 7  Max: 15"
-    send_numeric "266", ":Current Global Users: 15  Max: 23"
-    send_numeric "422", ":MOTD File is missing"
-
-    write ":#{@client_nick} MODE #{@client_nick} :+iwx"
+    msg "005", ["NAMESX", "SAFELIST", "HCN", "MAXCHANNELS=10", "CHANLIMIT=#:10", "MAXLIST=b:60,e:60,I:60", "NICKLEN=30", "CHANNELLEN=32", "TOPICLEN=307", "KICKLEN=307", "AWAYLEN=307", "MAXTARGETS=20", "WALLCHOPS", "are supported by this server"]
+    msg "251", ["There are 7 users and 8 invisible on 2 servers"]
+    msg "252", ["8", "operator(s) online"]
+    msg "254", ["4", "channels formed"]
+    msg "255", ["I have 7 clients and 1 servers"]
+    msg "265", ["Current Local Users: 7  Max: 15"]
+    msg "266", ["Current Global Users: 15  Max: 23"]
+    msg "422", ["MOTD File is missing"]
+    
+    msg_from @client_nick, "MODE", @client_nick, ["+iwx"]
     @registered = true
+  end
+
+  def msg(cmd, args)
+    msg_from @hostname, cmd, @client_nick, args
+  end
+
+  def msg_from(from, cmd, to, args)
+    raw_msg([":#{from}", cmd, to] + args)
+  end
+
+  def raw_msg(args)
+    unless args[-1].index(' ').nil?
+      args[-1] = ':' + args[-1]
+    end
+    write(args * " ")
   end
 
   def send_err(err)

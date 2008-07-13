@@ -1,11 +1,11 @@
 class ServerConnection < AsyncSocket
   attr_reader :host
 
-  def initialize(app, conf)
+  def initialize(app, host, conf)
     super()
     @app = app
 
-    @host = conf['host']
+    @host = host
     @port = conf['port']
     @ssl = conf['ssl']
     @desired_nick = conf['nick']
@@ -55,7 +55,7 @@ class ServerConnection < AsyncSocket
   end
 
   def handle_connect
-    puts "connected to server!"
+    puts "connected to server #{@host}!"
     @state = :logging_in
     write "NICK #{@desired_nick}"
     write "USER #{@user} #{@hostname} #{@host} :#{@name}"
@@ -64,7 +64,7 @@ class ServerConnection < AsyncSocket
   def handle_line(line)
     shortargs, longarg = /^(.*?)(?: :(.*))?$/.match(line).captures
     args = shortargs.split(' ') << longarg
-    puts "server: #{args.inspect}"
+    puts "#{@host}: #{args.inspect}"
 
     if args[0][0..0] == ":"
       # commands starting with an id

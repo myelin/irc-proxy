@@ -10,6 +10,8 @@ require 'server'
 require 'client'
 
 class App
+  attr_reader :conf
+
   def main
     read_config
     start_server_connections
@@ -21,8 +23,9 @@ class App
   end
 
   def start_server_connections
-    @conf['servers'].each do |s|
-      ServerConnection.new(self, s).start
+    @conf['servers'].each do |host, s|
+      next if s['disabled']
+      ServerConnection.new(self, host, s).start
     end
   end
 
