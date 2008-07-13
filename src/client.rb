@@ -33,24 +33,38 @@ class ClientConnection < AsyncSocket
   end
 
   def handle_line(line)
-    puts "line: #{line}"
-    if m = /^USER (.*?) (.*?) (.*?) :(.*)$/.match(line)
-      @client_user, @client_host, @client_login, @client_name = m.captures
+    shortargs, longarg = /^(.*?)(?: :(.*))?$/.match(line).captures
+    args = shortargs.split(' ')
+    args << longarg unless longarg.nil?
+    puts "#{@client_nick}: #{args.inspect}"
+
+    case args[0]
+    when "USER"
+      _, @client_user, @client_host, @client_login, @client_name = args
       try_register
-    elsif m = /^PASS (.*)$/.match(line)
-      @client_pass = m.captures[0]
-    elsif m = /^NICK (.*)$/.match(line)
-      @client_nick = m.captures[0]
+    when "PASS"
+      @client_pass = args[1]
+    when "NICK"
+      @client_nick = args[1]
       try_register
-    elsif m = /^JOIN (#[a-z0-9]+)$/.match(line)
-      chan = m.captures[0]
+    when "JOIN"
+      chan = args[1]
       puts "join channel #{chan}"
-      umsg ["JOIN", chan] # tell the user they're joined
-      msg "332", [chan, "channel title"]
-      msg "353", ["=", chan, "userone usertwo userthree"]
-      msg "366", [chan, "End of /NAMES list"]
-    elsif line == 'AWAY'
+      unless @channels.include?(chan)
+        @channels << chan
+        umsg ["JOIN", chan] # tell the user they're joined
+        msg "332", [chan, "channel title"]
+        msg "353", ["=", chan, "userone usertwo userthree"]
+        msg "366", [chan, "End of /NAMES list"]
+      end
+    when "AWAY"
       @away = true
+    when "PRIVMSG"
+      if args[1][0..0] == '#'
+        puts "channel msg to #{args[1]}: #{args[2]}"
+      else
+        puts "privmsg to #{args[1]}: #{args[2]}"
+      end
     else
       puts "can't parse #{line}"
     end
