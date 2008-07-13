@@ -1,4 +1,6 @@
 class ClientConnection < AsyncSocket
+  attr_reader :channels
+
   def initialize(app, sock)
     super()
     @app = app
@@ -61,9 +63,9 @@ class ClientConnection < AsyncSocket
       @away = true
     when "PRIVMSG"
       if args[1][0..0] == '#'
-        puts "channel msg to #{args[1]}: #{args[2]}"
+        @app.send_chanmsg(args[1], args[2])
       else
-        puts "privmsg to #{args[1]}: #{args[2]}"
+        @app.send_privmsg(args[1], args[2])
       end
     else
       puts "can't parse #{line}"
@@ -120,5 +122,10 @@ class ClientConnection < AsyncSocket
 
   def send_msg(msg)
     write ":#{@hostname} #{Time.now.to_i - @timestamp} #{@client_nick} :#{msg}"
+  end
+
+  def handle_chanmsg(s, chan, from, msg)
+    # received a channel msg from a server; pass it on to this client
+    write ":#{from}!#{from}@#{@hostname} PRIVMSG #{chan} :#{msg}"
   end
 end

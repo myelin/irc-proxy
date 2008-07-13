@@ -12,7 +12,9 @@ class Listener
     while true
       begin
         sock = @serv.accept_nonblock
-        @threads << ClientConnection.new(@app, sock).start
+        c = ClientConnection.new(@app, sock)
+        @app.new_client(c)
+        @threads << c.start
       rescue Errno::EAGAIN, Errno::EWOULDBLOCK, Errno::ECONNABORTED, Errno::EPROTO, Errno::EINTR
         IO.select([@serv], [], [], 1)
         retry

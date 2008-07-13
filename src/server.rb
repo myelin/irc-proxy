@@ -1,5 +1,5 @@
 class ServerConnection < AsyncSocket
-  attr_reader :host
+  attr_reader :host, :channels
 
   def initialize(app, host, conf)
     super()
@@ -12,6 +12,7 @@ class ServerConnection < AsyncSocket
     @user = conf['user']
     @name = conf['name']
     @channels_to_join = conf['channels']
+    @channels = {}
 
     @state = :offline
   end
@@ -61,6 +62,11 @@ class ServerConnection < AsyncSocket
     write "USER #{@user} #{@hostname} #{@host} :#{@name}"
   end
 
+  def send_chanmsg(chan, msg)
+    # send a message received from a client to a channel
+    write "PRIVMSG #{chan} :#{msg}"
+  end
+
   def handle_line(line)
     shortargs, longarg = /^(.*?)(?: :(.*))?$/.match(line).captures
     args = shortargs.split(' ') << longarg
@@ -84,6 +90,18 @@ class ServerConnection < AsyncSocket
           @state = :online
           join_channels
         end
+      when "JOIN"
+        chan = args[2]
+        puts "i've joined a channel: #{chan}"
+        @channels[chan] = {'topic' => nil, 'names' => []}
+      when "332"
+        @channels[args[3]]['topic'] = args[4]
+      when "333"
+        # channel owner?
+      when "353"
+        @channels[args[4]]['names'] += args[5].split(" ")
+      when "366"
+        # end of /NAMES list
       when "PRIVMSG"
         #[":nick!user@user.host.com", "PRIVMSG", "#channel", "lol"]
         from, _, to, msg = args
