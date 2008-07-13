@@ -57,11 +57,7 @@ class ClientConnection < AsyncSocket
       chan = args[1]
       puts "join channel #{chan}"
       unless @channels.include?(chan)
-        @channels << chan
-        umsg ["JOIN", chan] # tell the user they're joined
-        msg "332", [chan, "channel title"]
-        msg "353", ["=", chan, "userone usertwo userthree"]
-        msg "366", [chan, "End of /NAMES list"]
+        join_channel chan
       end
     when "AWAY"
       @away = true
@@ -75,7 +71,15 @@ class ClientConnection < AsyncSocket
       puts "can't parse #{line}"
     end
   end
-
+  
+  def join_channel(chan)
+    @channels << chan
+    umsg ["JOIN", chan] # tell the user they're joined
+    msg "332", [chan, "channel title"]
+    msg "353", ["=", chan, "userone usertwo userthree"]
+    msg "366", [chan, "End of /NAMES list"]
+  end
+  
   def try_register
     return unless @client_user && @client_pass && @client_nick
     msg "001", ["Welcome to the proxy #{@client_nick}!#{@client_user}@#{@client_host}"]
