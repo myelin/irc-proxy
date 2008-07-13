@@ -1,0 +1,15 @@
+The App object, in proxy.rb, glues everything together.  When the
+program starts, it creates a ServerConnection object for every server
+in config.yml, and a Listener object, which listens on a TCP port for
+clients and creates a ClientConnection object when a client connects.
+
+Each ServerConnection object connects to a server and joins the
+channels specified in config.yml.  When a channel or private message
+is received, it passes it back to App#handle_privmsg or
+App#handle_chanmsg, which passes it to the appropriate
+ClientConnection.
+
+Each ClientConnection object handles a client.  When a client tries to
+send a channel or private message, it passes it back to
+App#send_privmsg or App#send_chanmsg, which passes it to the
+appropriate ServerConnection.

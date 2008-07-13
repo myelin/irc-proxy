@@ -1,0 +1,7 @@
+- Prefix channels and users with something to indicate the server.
+
+- Buffer conversations into a file when clients are not connected, and replay them when a client connects.
+
+- Change server nick when clients disconnect.
+
+- Get rid of threading and write a single dispatcher which calls IO.select and passes events back to AsyncSocket classes.  (Is this what EventMachine does?)
