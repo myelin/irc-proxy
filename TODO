@@ -1,6 +1,8 @@
-- Prefix channels and users with something to indicate the server.
+- Ignore JOIN messages from clients, but force-join clients to all known server channels upon connection.
 
-- Buffer conversations into a file when clients are not connected, and replay them when a client connects.
+- Play back buffered conversations when a client connects.
+
+- Prefix channels and users with something to indicate the server.
 
 - Change server nick when clients disconnect.
 
