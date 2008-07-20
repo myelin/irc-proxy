@@ -1,3 +1,5 @@
+- Hook up sqlite
+
 - Ignore JOIN messages from clients, but force-join clients to all known server channels upon connection.
 
 - Play back buffered conversations when a client connects.

@@ -5,6 +5,13 @@ Use this to buffer traffic on one or more IRC servers and channels for
 later reading, if you're not always connected.  Great if you suffer
 from frequently interrupted connections to your IRC server.
 
+State: in development
+=====================
+
+Not working yet; see the TODO file for some things yet to be done.
+
+License
+=======
 
 Copyright (C) 2008 Phillip Pearson <pp@myelin.co.nz>
 
